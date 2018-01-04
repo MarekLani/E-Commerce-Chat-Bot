@@ -53,7 +53,7 @@ Bot is accessible thru Messenger and Direct line injected to e-shop web page. Us
 
 In following subsections we will describe specific parts of bot in deeper detail.
 
-### **Connecting bot to API and displaying content **
+### **Connecting bot to API and displaying content**
 
 Connection to the API and request to specific service is invoked from the dialog, which corresponds with the determined user intent. Execution of the request itself is implemented within API Communicator module using request client supporting javascript promises (request-promise). Below is example of API request code which requires authentication. All API services, even the ones which does not need users to login are secured using API key, which is part of bot application settings.
 
@@ -97,8 +97,6 @@ showCart: function (session) {
 
 
 Once dialog receives json result from the API Communicator, it starts to process it. In majority of dialogs, we utilize rich card to display content to users. To create these cards, we have implemented **Cards module**, which utilizes Bot Builder SDK to create cards. Below is example of creation of carousel hero card reply to display product categories:
-
-~~Cards.js~~
 
 ```javascript
 //cards.js
