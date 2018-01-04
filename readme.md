@@ -18,20 +18,20 @@ The bot is built in TypeScript on top of Node.js Bot Framework SDK and available
 
 Chat bot development was divided into following interconnected parts:
 
-1. **Preparation of backend API **– development of the SmartBase’s e-commerce platform started longer time ago and it was originally built as a Django MVC Web Application without API services available for consumption by mobile or bot application. Thus, there was need to prepare REST services, which were subsequently utilized by conversational bot. We will not be discussing this API in detail in this text, as our focus lays on the chat bot part.
-2. **Connecting bot to API and displaying content **– in first phase we have implemented main part of the bot application, which was consuming e-commerce solution services and was delivering content to user thru Messenger and Direct Line.
+1. **Preparation of backend API**– development of the SmartBase’s e-commerce platform started longer time ago and it was originally built as a Django MVC Web Application without API services available for consumption by mobile or bot application. Thus, there was need to prepare REST services, which were subsequently utilized by conversational bot. We will not be discussing this API in detail in this text, as our focus lays on the chat bot part.
+2. **Connecting bot to API and displaying content**– in first phase we have implemented main part of the bot application, which was consuming e-commerce solution services and was delivering content to user thru Messenger and Direct Line.
 3. **Login implementation** - some of the APIs require user authentication (shopping cart management, displaying of order details). In Messenger channel we have implemented login logic using [Messenger *account linking feature*](https://developers.facebook.com/docs/messenger-platform/identity/account-linking), which allows bot to authenticate user within the e-shop login page using OAuth flow and forward authentication token to bot chat window. In direct line chat window embedded into the e-shop web site we forward token thru parameters when embedding the chat control.
-4. **Implementation of proactive messaging **– as bot should serve as an up-selling channel, we have also implemented proactive messaging thru Messenger channel. We utilize proactive messaging feature when backend regular check notices “full basket, no order” status for the user. 
-5. **Custom recognizers implementation **– we allow certain degree of freedom within conversation, but as too big level of freedom may lead to bad user experience, we decided to primarily go by the way of commands invokable thru action buttons or typing. For this purpose, we have built custom command recognizer and in addition we use regexp recognizers as well.
-6. **Localization**– SmartBase is targeting customers not only from local market, thus bot has to support localization. For the first version we have worked on support for Slovak and English language.
-7. **Natural Language Processing in product filtering ** - bot allows users to use advanced natural language product filtering (e.g. show me stainless water taps bellow 80 Euros). For this purpose we wanted to use Language Understanding Intelligent Service (LUIS) first, however due to reasons discussed further in the document, we have decided to utilize **Elastic Search** and defined regexp rules, which effectively extract conditions stated in the natural language query.
+4. **Implementation of proactive messaging** – as bot should serve as an up-selling channel, we have also implemented proactive messaging thru Messenger channel. We utilize proactive messaging feature when backend regular check notices “full basket, no order” status for the user. 
+5. **Custom recognizers implementation** – we allow certain degree of freedom within conversation, but as too big level of freedom may lead to bad user experience, we decided to primarily go by the way of commands invokable thru action buttons or typing. For this purpose, we have built custom command recognizer and in addition we use regexp recognizers as well.
+6. **Localization** – SmartBase is targeting customers not only from local market, thus bot has to support localization. For the first version we have worked on support for Slovak and English language.
+7. **Natural Language Processing in product filtering** - bot allows users to use advanced natural language product filtering (e.g. show me stainless water taps bellow 80 Euros). For this purpose we wanted to use Language Understanding Intelligent Service (LUIS) first, however due to reasons discussed further in the document, we have decided to utilize **Elastic Search** and defined regexp rules, which effectively extract conditions stated in the natural language query.
 8. **Bot Application Monitoring** – to get insights on how the bot is being used, we have connected our bot to Application Insights, to collect usage and error logs.
 
 ###  Core team:
 
-·       Jakub Kacur – Senior developer of SmartBase’s e-commerce platform; SmartBase
+·       **Jakub Kacur** – Senior developer of SmartBase’s e-commerce platform; SmartBase
 
-·       Marek Lani – CSE Technical Evangelist; Microsoft
+·       **Marek Lani** – CSE Technical Evangelist; Microsoft
 
 ### **Customer profile**
 
@@ -480,7 +480,9 @@ module.exports = {
 };
 ```
 
-## Localization
+
+
+### Localization
 
 Bot supports localization of prompts and messages sent to user. User is offered also an option to select preferred language. By default, this preference is set to our local (Slovak) language. This preference is subsequently used when selecting right string to be displayed. Language selection prompt dialog is implemented in following way:
 
@@ -537,15 +539,13 @@ var locale = getLocale(session);
 session.send(session.localizer.gettext(locale, "LocalizedStringKey"));
 ```
 
-~~~~
-
 As already stated, localization was implemented also within Regular Expression Recognizer and is demonstrated in code fence in previous section.
 
 ### Natural Language Processing in product filtering
 
 Bot allows users to use advanced natural language product filtering (e.g. show me stainless water taps bellow 80 Euros). For this purpose, we wanted to use Language Understanding Intelligent Service (LUIS) first, however it does not support Slovak language. We have experimented with creation of translation middleware, which would translate messages to English using Bing Translate API before sending them to LUIS. This however turned out to deliver low quality and precision of intent recognition. We have decided to utilize **Elastic Search** and defined regexp rules, which effectively extract conditions stated in the natural language query. Bellow you can see python script, which implements this filtering capabilities on the e-shop backend side:
 
-```python
+~~~~python
 #pythonElasticScript
 es_query_products['size'] = 4
 price_regex = re.search(r'(do|nad|od|pod|okolo)?\s*([\d]+)\s*(eur|euro|E|€)*', es_search, )
@@ -560,11 +560,16 @@ if price_regex:
         es_query_products['query']['bool']["filter"] = {'range': {
             'price_incl_tax': {
                 "lte": int(price_regex.group(2)) + config.SEARCH_PRICE_DIFF,
-```
+                "gte": int(price_regex.group(2)) - config.SEARCH_PRICE_DIFF}}
+        }
+    es_search = re.sub('(do|nad|od|pod|okolo)?\s*([\d]+)\s*(eur|euro|E|€)*', '', es_search)
+    es_query_products["query"]["bool"]["must"]["multi_match"]["query"] = es_search
+
+~~~~
 
 
 
-## Usage monitoring  
+### Usage monitoring  
 
 To monitor bot usage and collect error logs, we have used Application Insights using official [npm Application Insights package](https://www.npmjs.com/package/applicationinsights). We have implemented Application Insights helper and imported and used it when handling conversation flow in dialogs.
 
@@ -690,5 +695,3 @@ As stated, we have implemented also usage monitoring mechanism, which helps us t
 We also would like to experiment with **extending of support for Natural Language Processing**. This however has prerequisite in form of language support of LUIS, as at the current point, majority of customers for SmartBase's e-commerce platform is from Slovakia. However, once the number of customers from countries, where they use languages supported by LUIS grows, SmartBase may invest in implementation of LUIS and extending natural language capabilities of the solution.  
 
 As from the March session storage offered by Bot Framework will be deprecated, we plan to **migration of session storage** most probably to Redis Cache offered as a service within Azure.
-
- 
