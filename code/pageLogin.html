@@ -1,0 +1,20 @@
+<html>
+  <head>
+    <link href="https://unpkg.com/botframework-webchat/botchat.css" rel="stylesheet" />
+    ...
+  </head>
+  <body>
+    <div id="bot"/>
+    <script src="https://unpkg.com/botframework-webchat/botchat.js"></script>
+    <script>
+      BotChat.App({
+        directLine: { secret: 'DirectLineKey'},
+        user: { id: 'authToken;refreshToken;tokenGeneratedAt', name: 'userName' },
+        bot: { id: 'ecommercebot' },
+		locale:"sk",
+        resize: 'detect'
+      }, document.getElementById("bot"));
+    </script>
+...
+</body>
+</html>
